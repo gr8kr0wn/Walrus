@@ -1,0 +1,2366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>WalrusMint — SUI NFT Marketplace</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+/* ═══════════════════════════════════════════════════════
+   DESIGN TOKENS — White / Blue / Gold / Silver
+   ═══════════════════════════════════════════════════════ */
+:root {
+  --white:      #FFFFFF;
+  --off-white:  #F0F4FF;
+  --blue-deep:  #0A1628;
+  --blue-mid:   #0D2860;
+  --blue-bright:#1A56DB;
+  --blue-glow:  #3B82F6;
+  --gold:       #C9A227;
+  --gold-light: #F0C040;
+  --gold-pale:  #FFF3CD;
+  --silver:     #C0C8D8;
+  --silver-mid: #8896B0;
+  --silver-dark:#4A5568;
+
+  --bg:         #060E1E;
+  --surface:    rgba(255,255,255,0.04);
+  --surface-2:  rgba(255,255,255,0.08);
+  --glass:      rgba(255,255,255,0.06);
+  --glass-border: rgba(255,255,255,0.12);
+
+  --mercury-1:  #B8C8E8;
+  --mercury-2:  #7A92BA;
+  --mercury-3:  #4A6494;
+
+  --nav-h: 80px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-2xl: 40px;
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body:    'Inter', sans-serif;
+}
+
+/* ═══════════════════════════════════════════════════════ RESET */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--white);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+button { cursor: pointer; border: none; outline: none; }
+input, textarea, select { outline: none; }
+img { max-width: 100%; }
+
+/* ═══════════════════════════════════════════════════════
+   ANIMATED BG NEBULA
+   ═══════════════════════════════════════════════════════ */
+#bg-canvas {
+  position: fixed; inset: 0; z-index: 0;
+  pointer-events: none;
+}
+.page-wrap { position: relative; z-index: 1; }
+
+/* ═══════════════════════════════════════════════════════
+   TOP BAR
+   ═══════════════════════════════════════════════════════ */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px;
+  background: rgba(6,14,30,0.7);
+  backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid var(--glass-border);
+}
+.logo {
+  font-family: var(--font-display);
+  font-size: 22px; font-weight: 700;
+  background: linear-gradient(135deg, var(--gold-light), var(--blue-glow), var(--white));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
+}
+.logo span { color: var(--gold); }
+
+/* profile button */
+.profile-btn {
+  position: relative;
+  width: 42px; height: 42px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue-mid), var(--mercury-3));
+  border: 2px solid var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  transition: transform .2s, box-shadow .2s;
+}
+.profile-btn:hover { transform: scale(1.1); box-shadow: 0 0 20px rgba(201,162,39,.4); }
+.profile-btn .wallet-dot {
+  position: absolute; bottom: 2px; right: 2px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #22c55e; border: 2px solid var(--bg);
+}
+
+/* profile dropdown */
+.profile-dropdown {
+  position: absolute; top: 54px; right: 0;
+  width: 260px;
+  background: rgba(10,22,50,0.95);
+  backdrop-filter: blur(40px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05);
+  display: none; flex-direction: column; gap: 4px;
+  transform-origin: top right;
+  animation: dropIn .2s ease;
+}
+.profile-dropdown.open { display: flex; }
+@keyframes dropIn {
+  from { opacity: 0; transform: scale(.95) translateY(-8px); }
+  to   { opacity: 1; transform: scale(1)  translateY(0); }
+}
+.pd-wallet {
+  font-size: 11px; color: var(--silver-mid); font-weight: 500;
+  letter-spacing: .05em; text-transform: uppercase; margin-bottom: 4px;
+}
+.pd-address {
+  font-family: monospace; font-size: 13px; color: var(--silver);
+  background: rgba(255,255,255,.04); border-radius: 8px; padding: 8px 10px;
+  margin-bottom: 8px; word-break: break-all;
+}
+.pd-balance {
+  display: flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, rgba(201,162,39,.15), rgba(26,86,219,.1));
+  border: 1px solid rgba(201,162,39,.2);
+  border-radius: 12px; padding: 10px 12px;
+  margin-bottom: 8px;
+}
+.pd-balance .bal-icon { font-size: 20px; }
+.pd-balance .bal-label { font-size: 11px; color: var(--silver-mid); }
+.pd-balance .bal-val { font-size: 18px; font-weight: 700; color: var(--gold-light); }
+.pd-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 10px;
+  font-size: 14px; color: var(--silver); font-weight: 500;
+  transition: background .15s, color .15s;
+}
+.pd-item:hover { background: var(--surface-2); color: var(--white); }
+.pd-divider { height: 1px; background: var(--glass-border); margin: 4px 0; }
+.pd-item.danger:hover { background: rgba(239,68,68,.15); color: #ef4444; }
+
+/* ═══════════════════════════════════════════════════════
+   BOTTOM NAV — LIQUID MERCURY
+   ═══════════════════════════════════════════════════════ */
+.bottom-nav {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  z-index: 100;
+  display: flex; align-items: center; gap: 4px;
+  padding: 8px 12px;
+  background: rgba(192,200,216,0.12);
+  backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid rgba(192,200,216,0.25);
+  border-radius: 50px;
+  box-shadow:
+    0 8px 32px rgba(0,0,0,.5),
+    inset 0 1px 0 rgba(255,255,255,.2),
+    inset 0 -1px 0 rgba(0,0,0,.3),
+    0 0 60px rgba(59,130,246,.08);
+}
+/* mercury blob that slides under active item */
+.nav-mercury {
+  position: absolute;
+  height: 44px; width: 76px;
+  border-radius: 50px;
+  background: linear-gradient(135deg, var(--mercury-1), var(--mercury-2));
+  box-shadow: 0 0 20px rgba(184,200,232,.3), inset 0 1px 0 rgba(255,255,255,.5);
+  transition: left .35s cubic-bezier(.34,1.56,.64,1);
+  pointer-events: none;
+}
+.nav-item {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 8px 18px; border-radius: 44px;
+  background: transparent;
+  color: var(--silver-mid); font-size: 10px; font-weight: 600;
+  letter-spacing: .04em; text-transform: uppercase;
+  transition: color .2s;
+  min-width: 68px;
+}
+.nav-item .nav-icon { font-size: 20px; transition: transform .3s; }
+.nav-item.active { color: var(--blue-deep); }
+.nav-item.active .nav-icon { transform: scale(1.15); }
+
+/* ═══════════════════════════════════════════════════════
+   PAGES
+   ═══════════════════════════════════════════════════════ */
+.page {
+  display: none; min-height: 100vh;
+  padding: 80px 0 120px;
+}
+.page.active { display: block; }
+
+.container { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+
+/* ═══════════════════════════════════════════════════════
+   HOME — TRENDING STACK
+   ═══════════════════════════════════════════════════════ */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px; padding: 0 2px;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: 22px; font-weight: 700;
+  background: linear-gradient(90deg, var(--white), var(--silver));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.section-title .accent { -webkit-text-fill-color: var(--gold-light); }
+.see-all {
+  font-size: 13px; color: var(--blue-glow); font-weight: 600;
+  background: none; text-decoration: none;
+  transition: color .15s;
+}
+.see-all:hover { color: var(--gold-light); }
+
+/* NFT CARD STACK */
+.nft-stack-container {
+  position: relative; height: 420px; margin-bottom: 40px;
+  user-select: none;
+}
+.nft-stack-card {
+  position: absolute; inset: 0;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  cursor: grab;
+  transition: transform .4s cubic-bezier(.34,1.2,.64,1), opacity .4s;
+  touch-action: pan-y;
+}
+.nft-stack-card:active { cursor: grabbing; }
+.nft-stack-card .nft-img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.nft-stack-card .nft-img-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 80px;
+}
+/* info overlay at bottom */
+.nft-stack-info {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 14px 16px;
+  background: rgba(6,14,30,0.55);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255,255,255,.08);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nft-stack-info .nft-name {
+  font-weight: 700; font-size: 16px; color: var(--white);
+  max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nft-stack-info .nft-price-wrap {
+  display: flex; align-items: center; gap: 10px;
+}
+.nft-stack-info .nft-price {
+  font-weight: 700; font-size: 15px;
+  color: var(--gold-light);
+}
+.nft-stack-info .nft-price-label {
+  font-size: 10px; color: var(--silver-mid); margin-bottom: 2px;
+}
+.like-btn {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: rgba(255,255,255,.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  transition: background .2s, transform .2s;
+}
+.like-btn:hover, .like-btn.liked { background: rgba(239,68,68,.25); transform: scale(1.15); }
+.like-btn.liked { border-color: #ef4444; }
+
+/* stack depth cards */
+.nft-stack-card:nth-child(2) { transform: translateX(-12px) translateY(8px) scale(.96); opacity: .7; }
+.nft-stack-card:nth-child(3) { transform: translateX(-22px) translateY(16px) scale(.92); opacity: .45; }
+.nft-stack-card:nth-child(4) { transform: translateX(-30px) translateY(22px) scale(.88); opacity: .2; }
+
+/* swipe hint */
+.swipe-hint {
+  position: absolute; top: 50%; right: -50px;
+  transform: translateY(-50%);
+  writing-mode: vertical-rl; text-orientation: mixed;
+  font-size: 10px; color: var(--silver-dark); letter-spacing: .1em;
+  display: flex; align-items: center; gap: 6px; opacity: .6;
+}
+
+/* ═══════════════════════════════════════════════════════
+   NFT HORIZONTAL SCROLL ROW
+   ═══════════════════════════════════════════════════════ */
+.nft-row {
+  display: flex; gap: 14px; overflow-x: auto; padding-bottom: 10px;
+  scrollbar-width: none;
+}
+.nft-row::-webkit-scrollbar { display: none; }
+
+.nft-card {
+  flex: 0 0 160px; border-radius: var(--radius-lg); overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--glass-border);
+  cursor: pointer;
+  transition: transform .2s, box-shadow .2s, border-color .2s;
+  position: relative;
+}
+.nft-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0,0,0,.4), 0 0 20px rgba(59,130,246,.15);
+  border-color: rgba(59,130,246,.3);
+}
+.nft-card .nft-thumb {
+  width: 100%; aspect-ratio: 1; object-fit: cover;
+  display: block;
+}
+.nft-card .nft-thumb-ph {
+  width: 100%; aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px;
+}
+.nft-card .card-info {
+  padding: 8px 10px 10px;
+  background: rgba(6,14,30,0.6);
+  backdrop-filter: blur(12px);
+}
+.nft-card .card-name {
+  font-size: 12px; font-weight: 600; color: var(--white);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nft-card .card-price {
+  font-size: 11px; color: var(--gold-light); font-weight: 600; margin-top: 2px;
+}
+.nft-card .rarity-badge {
+  position: absolute; top: 8px; right: 8px;
+  padding: 2px 7px; border-radius: 20px;
+  font-size: 9px; font-weight: 700; letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.rarity-Legendary { background: linear-gradient(135deg,#f59e0b,#d97706); color: #000; }
+.rarity-Epic      { background: linear-gradient(135deg,#8b5cf6,#7c3aed); color: #fff; }
+.rarity-Rare      { background: linear-gradient(135deg,#3b82f6,#1d4ed8); color: #fff; }
+.rarity-Common    { background: rgba(255,255,255,.12); color: var(--silver); }
+
+/* ═══════════════════════════════════════════════════════
+   CATEGORY SECTIONS
+   ═══════════════════════════════════════════════════════ */
+.category-pills {
+  display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
+  scrollbar-width: none; margin-bottom: 20px;
+}
+.category-pills::-webkit-scrollbar { display: none; }
+.pill {
+  flex: 0 0 auto; padding: 7px 16px; border-radius: 50px;
+  font-size: 12px; font-weight: 600; letter-spacing: .04em;
+  border: 1px solid var(--glass-border);
+  background: var(--surface);
+  color: var(--silver-mid);
+  transition: all .2s;
+}
+.pill.active, .pill:hover {
+  background: linear-gradient(135deg, var(--blue-mid), var(--blue-bright));
+  border-color: var(--blue-glow);
+  color: var(--white);
+  box-shadow: 0 4px 16px rgba(26,86,219,.3);
+}
+
+/* Featured banner */
+.featured-banner {
+  border-radius: var(--radius-xl); overflow: hidden;
+  position: relative; height: 180px; margin-bottom: 32px;
+  background: linear-gradient(135deg, var(--blue-mid) 0%, #0A1628 50%, rgba(201,162,39,.2) 100%);
+  border: 1px solid rgba(201,162,39,.25);
+  display: flex; align-items: center; padding: 24px;
+  gap: 20px;
+}
+.featured-banner .fb-text .fb-tag {
+  font-size: 10px; color: var(--gold); font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; margin-bottom: 6px;
+}
+.featured-banner .fb-text .fb-title {
+  font-family: var(--font-display); font-size: 24px; font-weight: 700; line-height: 1.1;
+}
+.featured-banner .fb-text .fb-sub {
+  font-size: 13px; color: var(--silver-mid); margin-top: 6px;
+}
+.featured-banner .fb-emoji {
+  font-size: 80px; position: absolute; right: 20px; bottom: -10px; opacity: .7;
+}
+.featured-banner .fb-btn {
+  margin-top: 14px; padding: 8px 18px; border-radius: 50px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: #000; font-size: 12px; font-weight: 700;
+  box-shadow: 0 4px 16px rgba(201,162,39,.3);
+  transition: transform .2s, box-shadow .2s;
+}
+.featured-banner .fb-btn:hover {
+  transform: translateY(-2px); box-shadow: 0 8px 24px rgba(201,162,39,.4);
+}
+
+/* Stats strip */
+.stats-strip {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+  margin-bottom: 32px;
+}
+.stat-card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 16px 14px;
+  text-align: center;
+}
+.stat-card .stat-val {
+  font-family: var(--font-display); font-size: 22px; font-weight: 700;
+  background: linear-gradient(135deg, var(--gold-light), var(--blue-glow));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.stat-card .stat-label {
+  font-size: 10px; color: var(--silver-mid); font-weight: 600;
+  letter-spacing: .05em; text-transform: uppercase; margin-top: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   MINT PAGE
+   ═══════════════════════════════════════════════════════ */
+.mint-hero {
+  text-align: center; padding: 32px 0 24px;
+}
+.mint-hero h1 {
+  font-family: var(--font-display); font-size: clamp(28px,6vw,48px); font-weight: 800;
+  background: linear-gradient(135deg, var(--white) 0%, var(--gold-light) 40%, var(--blue-glow) 80%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  line-height: 1.1; margin-bottom: 10px;
+}
+.mint-hero p { color: var(--silver-mid); font-size: 15px; }
+
+.mint-card {
+  background: rgba(10,22,50,0.7);
+  backdrop-filter: blur(40px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-2xl);
+  padding: 28px;
+  max-width: 560px; margin: 0 auto;
+  box-shadow: 0 40px 80px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+/* upload zone */
+.upload-zone {
+  border: 2px dashed rgba(59,130,246,.35);
+  border-radius: var(--radius-xl);
+  padding: 40px 20px;
+  text-align: center; cursor: pointer;
+  transition: border-color .2s, background .2s;
+  position: relative; overflow: hidden;
+  margin-bottom: 24px;
+}
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--blue-glow);
+  background: rgba(59,130,246,.05);
+}
+.upload-zone .upload-icon { font-size: 48px; margin-bottom: 12px; }
+.upload-zone .upload-text { font-size: 15px; font-weight: 600; color: var(--silver); }
+.upload-zone .upload-sub { font-size: 12px; color: var(--silver-dark); margin-top: 4px; }
+.upload-zone input[type=file] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer;
+}
+.upload-preview {
+  width: 100%; max-height: 260px; object-fit: contain;
+  border-radius: 12px; margin-bottom: 12px;
+}
+
+/* form fields */
+.field-group { margin-bottom: 18px; }
+.field-label {
+  font-size: 12px; font-weight: 600; color: var(--silver-mid);
+  letter-spacing: .05em; text-transform: uppercase;
+  margin-bottom: 7px; display: block;
+}
+.field-input {
+  width: 100%; padding: 12px 16px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px; color: var(--white);
+  font-size: 14px; font-family: var(--font-body);
+  transition: border-color .2s, background .2s;
+}
+.field-input:focus {
+  border-color: var(--blue-glow);
+  background: rgba(59,130,246,.06);
+}
+.field-input::placeholder { color: var(--silver-dark); }
+textarea.field-input { resize: vertical; min-height: 80px; }
+
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+/* royalty slider */
+.slider-wrap { position: relative; }
+.range-slider {
+  width: 100%; appearance: none; height: 4px;
+  background: linear-gradient(to right, var(--blue-glow) 0%, var(--blue-glow) var(--val, 0%), rgba(255,255,255,.1) var(--val, 0%));
+  border-radius: 4px; cursor: pointer;
+}
+.range-slider::-webkit-slider-thumb {
+  appearance: none; width: 20px; height: 20px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  box-shadow: 0 0 10px rgba(201,162,39,.4);
+  cursor: pointer;
+}
+.range-val {
+  position: absolute; right: 0; top: -20px;
+  font-size: 12px; color: var(--gold-light); font-weight: 700;
+}
+
+/* traits */
+.traits-wrap { display: flex; flex-direction: column; gap: 10px; }
+.trait-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center; }
+.add-trait-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 9px 14px; border-radius: 10px;
+  background: rgba(255,255,255,.04);
+  border: 1px dashed var(--glass-border);
+  color: var(--silver-mid); font-size: 13px; font-weight: 500;
+  transition: all .15s; margin-top: 8px;
+}
+.add-trait-btn:hover { background: var(--surface-2); color: var(--white); border-color: var(--blue-glow); }
+.rm-trait { background: rgba(239,68,68,.15); border-radius: 8px; padding: 6px 10px; color: #ef4444; font-size: 14px; }
+.rm-trait:hover { background: rgba(239,68,68,.3); }
+
+/* upload progress / steps */
+.mint-steps {
+  display: flex; justify-content: space-between; margin-bottom: 28px;
+  position: relative;
+}
+.mint-steps::before {
+  content: ''; position: absolute; top: 16px; left: 0; right: 0; height: 2px;
+  background: rgba(255,255,255,.08);
+}
+.mint-step {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  position: relative; z-index: 1;
+}
+.mint-step .step-dot {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(255,255,255,.06); border: 2px solid rgba(255,255,255,.1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: var(--silver-dark);
+  transition: all .3s;
+}
+.mint-step.done .step-dot { background: var(--blue-bright); border-color: var(--blue-glow); color: #fff; }
+.mint-step.active .step-dot {
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  border-color: var(--gold-light); color: #000;
+  box-shadow: 0 0 16px rgba(201,162,39,.4);
+}
+.mint-step .step-label { font-size: 10px; color: var(--silver-dark); font-weight: 600; white-space: nowrap; }
+.mint-step.active .step-label { color: var(--gold-light); }
+.mint-step.done .step-label { color: var(--blue-glow); }
+
+/* main CTA button */
+.btn-primary {
+  width: 100%; padding: 16px; border-radius: 50px;
+  background: linear-gradient(135deg, var(--blue-bright) 0%, var(--blue-glow) 50%, #7c3aed 100%);
+  color: var(--white); font-size: 15px; font-weight: 700;
+  letter-spacing: .04em;
+  box-shadow: 0 8px 32px rgba(26,86,219,.35), inset 0 1px 0 rgba(255,255,255,.15);
+  transition: transform .2s, box-shadow .2s;
+  position: relative; overflow: hidden;
+}
+.btn-primary::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,.15), transparent);
+  opacity: 0; transition: opacity .2s;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(26,86,219,.5); }
+.btn-primary:hover::before { opacity: 1; }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+.btn-gold {
+  padding: 12px 24px; border-radius: 50px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: #000; font-size: 14px; font-weight: 700;
+  box-shadow: 0 6px 20px rgba(201,162,39,.3);
+  transition: transform .2s, box-shadow .2s;
+}
+.btn-gold:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(201,162,39,.5); }
+
+.btn-outline {
+  padding: 12px 24px; border-radius: 50px;
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  color: var(--silver); font-size: 14px; font-weight: 600;
+  transition: all .2s;
+}
+.btn-outline:hover { border-color: var(--blue-glow); color: var(--white); }
+
+/* ═══════════════════════════════════════════════════════
+   WISHLIST PAGE
+   ═══════════════════════════════════════════════════════ */
+.wishlist-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 300px; gap: 16px; text-align: center;
+}
+.wishlist-empty .empty-icon { font-size: 64px; opacity: .6; }
+.wishlist-empty h3 { font-size: 20px; font-weight: 700; color: var(--silver); }
+.wishlist-empty p { font-size: 14px; color: var(--silver-dark); }
+
+.wishlist-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;
+}
+@media (min-width: 640px) { .wishlist-grid { grid-template-columns: repeat(3,1fr); } }
+@media (min-width: 900px) { .wishlist-grid { grid-template-columns: repeat(4,1fr); } }
+
+.wishlist-card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden; cursor: pointer;
+  transition: transform .2s, box-shadow .2s;
+  position: relative;
+}
+.wishlist-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,.4); }
+.wishlist-card .wc-img { width: 100%; aspect-ratio: 1; object-fit: cover; }
+.wishlist-card .wc-img-ph { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 44px; }
+.wishlist-card .wc-body { padding: 10px 12px 12px; }
+.wishlist-card .wc-name { font-size: 13px; font-weight: 600; color: var(--white); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wishlist-card .wc-col { font-size: 11px; color: var(--silver-mid); margin-top: 2px; }
+.wishlist-card .wc-price { font-size: 13px; font-weight: 700; color: var(--gold-light); margin-top: 6px; }
+.wishlist-card .wc-remove {
+  position: absolute; top: 8px; right: 8px;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(239,68,68,.2);
+  border: 1px solid rgba(239,68,68,.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  transition: background .15s, transform .15s;
+}
+.wishlist-card .wc-remove:hover { background: rgba(239,68,68,.5); transform: scale(1.1); }
+
+/* ═══════════════════════════════════════════════════════
+   COLLECTION PAGE
+   ═══════════════════════════════════════════════════════ */
+.collection-header {
+  background: linear-gradient(135deg, rgba(13,40,96,.6), rgba(6,14,30,.8));
+  backdrop-filter: blur(40px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-2xl);
+  padding: 24px; margin-bottom: 24px;
+  display: flex; align-items: center; gap: 16px;
+}
+.col-avatar {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue-mid), var(--mercury-3));
+  border: 3px solid var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; flex-shrink: 0;
+  box-shadow: 0 0 24px rgba(201,162,39,.3);
+}
+.col-info .col-name { font-family: var(--font-display); font-size: 22px; font-weight: 700; }
+.col-info .col-addr { font-size: 12px; color: var(--silver-mid); font-family: monospace; margin-top: 2px; }
+.col-stats { display: flex; gap: 20px; margin-top: 12px; }
+.col-stat { text-align: center; }
+.col-stat .cs-val { font-size: 18px; font-weight: 700; color: var(--gold-light); }
+.col-stat .cs-label { font-size: 10px; color: var(--silver-dark); font-weight: 600; text-transform: uppercase; }
+
+.owned-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;
+}
+@media (min-width: 640px) { .owned-grid { grid-template-columns: repeat(3,1fr); } }
+@media (min-width: 900px) { .owned-grid { grid-template-columns: repeat(4,1fr); } }
+
+.owned-card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg); overflow: hidden;
+  cursor: pointer;
+  transition: transform .2s, box-shadow .2s, border-color .2s;
+  position: relative;
+}
+.owned-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0,0,0,.4), 0 0 20px rgba(201,162,39,.1);
+  border-color: rgba(201,162,39,.3);
+}
+.owned-card .oc-img { width: 100%; aspect-ratio: 1; object-fit: cover; }
+.owned-card .oc-img-ph { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 44px; }
+.owned-card .oc-body { padding: 10px 12px 12px; }
+.owned-card .oc-name { font-size: 13px; font-weight: 600; color: var(--white); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.owned-card .oc-value { font-size: 12px; color: var(--gold-light); font-weight: 600; margin-top: 3px; }
+.owned-card .oc-rarity { position: absolute; top: 8px; left: 8px; padding: 2px 7px; border-radius: 20px; font-size: 9px; font-weight: 700; }
+
+/* total value banner */
+.total-value-banner {
+  background: linear-gradient(135deg, rgba(201,162,39,.15), rgba(26,86,219,.1));
+  border: 1px solid rgba(201,162,39,.25);
+  border-radius: var(--radius-xl); padding: 20px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px;
+}
+.tv-label { font-size: 12px; color: var(--silver-mid); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.tv-val { font-family: var(--font-display); font-size: 28px; font-weight: 800; color: var(--gold-light); }
+.tv-sub { font-size: 12px; color: var(--silver-dark); margin-top: 2px; }
+
+/* ═══════════════════════════════════════════════════════
+   NFT DETAIL / COLLECTION VIEW (MODAL-LIKE PAGE)
+   ═══════════════════════════════════════════════════════ */
+#page-detail { padding-top: 74px; }
+
+.detail-hero {
+  border-radius: var(--radius-2xl); overflow: hidden;
+  position: relative; margin-bottom: 20px;
+  aspect-ratio: 1 / 1; max-height: 380px;
+}
+.detail-hero img, .detail-hero .detail-ph {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.detail-ph { display: flex; align-items: center; justify-content: center; font-size: 100px; }
+.detail-hero .back-btn {
+  position: absolute; top: 14px; left: 14px;
+  width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(6,14,30,.6); backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; color: var(--white);
+  transition: background .15s, transform .15s;
+}
+.detail-hero .back-btn:hover { background: rgba(6,14,30,.9); transform: scale(1.1); }
+.detail-hero .share-btn {
+  position: absolute; top: 14px; right: 14px;
+  width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(6,14,30,.6); backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; transition: background .15s;
+}
+.detail-hero .share-btn:hover { background: rgba(6,14,30,.9); }
+
+.detail-info { margin-bottom: 20px; }
+.detail-collection { font-size: 12px; color: var(--blue-glow); font-weight: 600; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .06em; }
+.detail-name { font-family: var(--font-display); font-size: 28px; font-weight: 800; margin-bottom: 6px; }
+.detail-creator { font-size: 12px; color: var(--silver-mid); }
+.detail-creator span { color: var(--silver); font-weight: 500; font-family: monospace; }
+
+/* price + buy/bid */
+.buy-bid-panel {
+  background: rgba(10,22,50,.8);
+  backdrop-filter: blur(40px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+.bbp-price-label { font-size: 11px; color: var(--silver-mid); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+.bbp-price {
+  font-family: var(--font-display); font-size: 32px; font-weight: 800;
+  background: linear-gradient(135deg, var(--gold-light), var(--white));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 16px;
+}
+.bbp-price .bbp-usd { font-size: 14px; color: var(--silver-mid); -webkit-text-fill-color: var(--silver-mid); font-weight: 400; margin-left: 8px; }
+.bbp-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn-buy {
+  padding: 14px; border-radius: 14px;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+  color: #000; font-size: 14px; font-weight: 800;
+  box-shadow: 0 6px 20px rgba(201,162,39,.3);
+  transition: transform .2s, box-shadow .2s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.btn-buy:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(201,162,39,.5); }
+.btn-bid {
+  padding: 14px; border-radius: 14px;
+  background: linear-gradient(135deg, var(--blue-mid), var(--blue-bright));
+  color: var(--white); font-size: 14px; font-weight: 700;
+  border: 1px solid rgba(59,130,246,.3);
+  box-shadow: 0 6px 20px rgba(26,86,219,.25);
+  transition: transform .2s, box-shadow .2s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.btn-bid:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(26,86,219,.4); }
+
+/* bid modal */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,.7); backdrop-filter: blur(8px);
+  display: none; align-items: flex-end; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-sheet {
+  width: 100%; max-width: 540px;
+  background: rgba(10,22,50,.97);
+  backdrop-filter: blur(60px);
+  border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+  border: 1px solid var(--glass-border);
+  border-bottom: none;
+  padding: 28px 24px 40px;
+  animation: slideUp .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.modal-sheet h3 { font-family: var(--font-display); font-size: 22px; font-weight: 700; margin-bottom: 20px; }
+.modal-sheet .sheet-handle {
+  width: 36px; height: 4px; border-radius: 4px;
+  background: rgba(255,255,255,.15); margin: 0 auto 20px;
+}
+
+/* bid time options */
+.bid-duration {
+  display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 20px;
+}
+.dur-pill {
+  padding: 6px 14px; border-radius: 50px;
+  background: var(--surface); border: 1px solid var(--glass-border);
+  font-size: 12px; color: var(--silver-mid); font-weight: 600;
+  transition: all .15s;
+}
+.dur-pill.active, .dur-pill:hover {
+  background: var(--blue-mid); border-color: var(--blue-glow);
+  color: var(--white);
+}
+
+/* collection grid below detail */
+.related-collection {
+  margin-top: 24px;
+}
+.related-collection h3 {
+  font-size: 16px; font-weight: 700; margin-bottom: 14px; color: var(--silver);
+}
+.related-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+}
+.related-card {
+  background: var(--glass); border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg); overflow: hidden; cursor: pointer;
+  transition: transform .2s, border-color .2s;
+}
+.related-card:hover { transform: scale(1.02); border-color: rgba(59,130,246,.3); }
+.related-card img, .related-card .rc-ph {
+  width: 100%; aspect-ratio: 1; object-fit: cover;
+  display: flex; align-items: center; justify-content: center; font-size: 36px;
+}
+.related-card .rc-info { padding: 8px 10px 10px; }
+.related-card .rc-name { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.related-card .rc-price { font-size: 11px; color: var(--gold-light); font-weight: 600; margin-top: 2px; }
+
+/* ═══════════════════════════════════════════════════════
+   TOAST NOTIFICATIONS
+   ═══════════════════════════════════════════════════════ */
+#toast-container {
+  position: fixed; top: 80px; right: 16px; z-index: 300;
+  display: flex; flex-direction: column; gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  padding: 12px 16px; border-radius: 12px;
+  background: rgba(10,22,50,.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  font-size: 13px; font-weight: 500;
+  display: flex; align-items: center; gap: 8px;
+  animation: toastIn .3s ease, toastOut .3s ease 2.7s forwards;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  pointer-events: all;
+}
+.toast.success { border-color: rgba(34,197,94,.3); }
+.toast.error   { border-color: rgba(239,68,68,.3); }
+.toast.info    { border-color: rgba(59,130,246,.3); }
+@keyframes toastIn { from { opacity:0; transform: translateX(20px); } to { opacity:1; transform: translateX(0); } }
+@keyframes toastOut { from { opacity:1; } to { opacity:0; transform: translateX(20px); } }
+
+/* ═══════════════════════════════════════════════════════
+   LOADING SHIMMER
+   ═══════════════════════════════════════════════════════ */
+.shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.08) 50%, rgba(255,255,255,.04) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE DESKTOP
+   ═══════════════════════════════════════════════════════ */
+@media (min-width: 768px) {
+  .container { padding: 0 32px; }
+  .nft-stack-container { height: 500px; }
+  .nft-card { flex: 0 0 200px; }
+  .mint-card { padding: 40px; }
+  .detail-hero { max-height: 460px; }
+  .bbp-actions { grid-template-columns: 1fr 1fr; }
+  .stats-strip { grid-template-columns: repeat(4,1fr); }
+}
+@media (min-width: 1024px) {
+  .bottom-nav { bottom: 30px; }
+  .nft-row { gap: 20px; }
+  .nft-card { flex: 0 0 220px; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   MISC UTILITIES
+   ═══════════════════════════════════════════════════════ */
+.mt-8 { margin-top: 8px; }
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
+.mt-32 { margin-top: 32px; }
+.mb-8 { margin-bottom: 8px; }
+.mb-16 { margin-bottom: 16px; }
+.mb-24 { margin-bottom: 24px; }
+.text-gold { color: var(--gold-light); }
+.text-silver { color: var(--silver-mid); }
+.text-sm { font-size: 13px; }
+.fw-700 { font-weight: 700; }
+.flex { display: flex; }
+.items-center { align-items: center; }
+.gap-8 { gap: 8px; }
+.gap-12 { gap: 12px; }
+
+/* Liquid glass shimmer on cards */
+.liquid-glass {
+  position: relative; overflow: hidden;
+}
+.liquid-glass::after {
+  content: '';
+  position: absolute; top: -50%; left: -60%;
+  width: 30%; height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent);
+  transform: skewX(-15deg);
+  animation: liquidShine 4s infinite;
+}
+@keyframes liquidShine {
+  0%  { left: -60%; }
+  100%{ left: 160%; }
+}
+
+/* Activity feed */
+.activity-feed { display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
+.activity-item {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--glass); border: 1px solid var(--glass-border);
+  border-radius: 14px; padding: 12px 14px;
+}
+.act-icon { font-size: 22px; width: 40px; height: 40px; border-radius: 10px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.act-body { flex: 1; min-width: 0; }
+.act-title { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.act-sub { font-size: 11px; color: var(--silver-mid); margin-top: 1px; }
+.act-price { font-size: 13px; font-weight: 700; color: var(--gold-light); white-space: nowrap; }
+
+/* Collection rankings table */
+.rankings-table { width: 100%; border-collapse: collapse; }
+.rankings-table th {
+  text-align: left; font-size: 10px; font-weight: 700;
+  color: var(--silver-dark); letter-spacing: .06em; text-transform: uppercase;
+  padding: 8px 12px; border-bottom: 1px solid var(--glass-border);
+}
+.rankings-table td { padding: 12px 12px; border-bottom: 1px solid rgba(255,255,255,.03); font-size: 13px; }
+.rankings-table tr:hover td { background: var(--surface); }
+.rank-num { color: var(--silver-dark); font-weight: 700; font-size: 15px; }
+.rank-pos { color: #22c55e; font-size: 11px; }
+.rank-neg { color: #ef4444; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<!-- ANIMATED BACKGROUND -->
+<canvas id="bg-canvas"></canvas>
+
+<div class="page-wrap">
+
+<!-- ══════════════ TOP BAR ══════════════ -->
+<header class="topbar">
+  <div class="logo">Walrus<span>Mint</span></div>
+  <div style="position:relative;">
+    <button class="profile-btn" id="profileBtn" onclick="toggleProfile()">
+      🐋
+      <div class="wallet-dot"></div>
+    </button>
+    <div class="profile-dropdown" id="profileDropdown">
+      <div class="pd-wallet">Wallet Connected</div>
+      <div class="pd-address" id="pdAddress">0x3f4a...8b2c</div>
+      <div class="pd-balance">
+        <span class="bal-icon">💎</span>
+        <div>
+          <div class="bal-label">Available Balance</div>
+          <div class="bal-val" id="pdBalance">—</div>
+        </div>
+      </div>
+      <div class="pd-divider"></div>
+      <button class="pd-item" onclick="showToast('Opening profile settings…','info')">👤 Profile Settings</button>
+      <button class="pd-item" onclick="showToast('Wallet management coming soon','info')">🔗 Manage Wallet</button>
+      <button class="pd-item" onclick="navigateTo('collection')">🖼️ My Collection</button>
+      <button class="pd-item" onclick="navigateTo('wishlist')">❤️ My Wishlist</button>
+      <div class="pd-divider"></div>
+      <button class="pd-item danger" onclick="showToast('Disconnected','error')">🚪 Disconnect</button>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════ TOAST CONTAINER ══════════════ -->
+<div id="toast-container"></div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE: HOME
+══════════════════════════════════════════════ -->
+<div class="page active" id="page-home">
+  <div class="container">
+
+    <!-- Featured Banner -->
+    <div class="featured-banner liquid-glass mt-16 mb-24">
+      <div class="fb-text">
+        <div class="fb-tag">⚡ Live Drop</div>
+        <div class="fb-title">Walrus Genesis<br/>Collection</div>
+        <div class="fb-sub">Limited · 999 NFTs · SUI Testnet</div>
+        <button class="fb-btn" onclick="navigateTo('mint')">Mint Now</button>
+      </div>
+      <div class="fb-emoji">🐋</div>
+    </div>
+
+    <!-- Stats Strip -->
+    <div class="stats-strip mb-24" id="statsStrip">
+      <div class="stat-card"><div class="stat-val" id="stat-vol">—</div><div class="stat-label">Volume</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-nfts">—</div><div class="stat-label">NFTs Minted</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-floor">—</div><div class="stat-label">Floor Price</div></div>
+    </div>
+
+    <!-- Category Filter -->
+    <div class="category-pills" id="categoryPills">
+      <button class="pill active" data-cat="all">All</button>
+      <button class="pill" data-cat="art">Art</button>
+      <button class="pill" data-cat="collectible">Collectibles</button>
+      <button class="pill" data-cat="3d">3D</button>
+      <button class="pill" data-cat="video">Video</button>
+      <button class="pill" data-cat="music">Music</button>
+      <button class="pill" data-cat="gaming">Gaming</button>
+    </div>
+
+    <!-- TRENDING STACK -->
+    <div class="section-header">
+      <h2 class="section-title">🔥 <span class="accent">Trending</span></h2>
+      <button class="see-all" onclick="">View All</button>
+    </div>
+
+    <div class="nft-stack-container" id="nftStack">
+      <div style="height:100%;display:flex;align-items:center;justify-content:center;">
+        <div class="shimmer" style="width:100%;height:100%;border-radius:28px;"></div>
+      </div>
+    </div>
+
+    <!-- NEW RELEASES -->
+    <div class="section-header mt-32">
+      <h2 class="section-title">✨ New <span class="accent">Releases</span></h2>
+      <button class="see-all">See All</button>
+    </div>
+    <div class="nft-row" id="newReleasesRow">
+      <!-- shimmer placeholders -->
+      <div class="shimmer" style="flex:0 0 160px;height:220px;border-radius:20px;"></div>
+      <div class="shimmer" style="flex:0 0 160px;height:220px;border-radius:20px;"></div>
+      <div class="shimmer" style="flex:0 0 160px;height:220px;border-radius:20px;"></div>
+      <div class="shimmer" style="flex:0 0 160px;height:220px;border-radius:20px;"></div>
+    </div>
+
+    <!-- TOP COLLECTIONS -->
+    <div class="section-header mt-32">
+      <h2 class="section-title">🏆 Top <span class="accent">Collections</span></h2>
+      <button class="see-all">Rankings</button>
+    </div>
+    <div style="background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius-xl);overflow:hidden;margin-bottom:32px;">
+      <table class="rankings-table" id="rankingsTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Collection</th>
+            <th>Volume</th>
+            <th>Minted</th>
+            <th>Sales</th>
+          </tr>
+        </thead>
+        <tbody id="rankingsBody">
+          <tr><td colspan="5" style="text-align:center;padding:20px;color:var(--silver-dark);">Loading rankings…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- RECENTLY SOLD -->
+    <div class="section-header">
+      <h2 class="section-title">💸 Recently <span class="accent">Sold</span></h2>
+    </div>
+    <div class="nft-row mb-24" id="soldRow">
+      <div class="shimmer" style="flex:0 0 160px;height:220px;border-radius:20px;"></div>
+      <div class="shimmer" style="flex:0 0 160px;height:220px;border-radius:20px;"></div>
+      <div class="shimmer" style="flex:0 0 160px;height:220px;border-radius:20px;"></div>
+    </div>
+
+    <!-- ACTIVITY FEED -->
+    <div class="section-header">
+      <h2 class="section-title">⚡ Live <span class="accent">Activity</span></h2>
+    </div>
+    <div class="activity-feed" id="activityFeed">
+      <div class="activity-item"><div class="act-icon shimmer" style="width:40px;height:40px;"></div><div class="act-body"><div class="shimmer mb-8" style="height:14px;width:70%;"></div><div class="shimmer" style="height:11px;width:40%;"></div></div></div>
+      <div class="activity-item"><div class="act-icon shimmer" style="width:40px;height:40px;"></div><div class="act-body"><div class="shimmer mb-8" style="height:14px;width:60%;"></div><div class="shimmer" style="height:11px;width:35%;"></div></div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE: MINT
+══════════════════════════════════════════════ -->
+<div class="page" id="page-mint">
+  <div class="container">
+    <div class="mint-hero">
+      <h1>Create Your NFT</h1>
+      <p>Upload, customize & mint on SUI with Walrus storage</p>
+    </div>
+
+    <!-- Steps progress -->
+    <div class="mint-steps mb-24" style="max-width:560px;margin-left:auto;margin-right:auto;">
+      <div class="mint-step active" id="step-1"><div class="step-dot">1</div><div class="step-label">Upload</div></div>
+      <div class="mint-step" id="step-2"><div class="step-dot">2</div><div class="step-label">Details</div></div>
+      <div class="mint-step" id="step-3"><div class="step-dot">3</div><div class="step-label">Price</div></div>
+      <div class="mint-step" id="step-4"><div class="step-dot">4</div><div class="step-label">Mint</div></div>
+    </div>
+
+    <div class="mint-card liquid-glass">
+
+      <!-- ── STEP 1: Upload ── -->
+      <div id="mintStep1">
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" id="fileInput" accept="image/*,video/*,.glb,.gltf" onchange="handleFileSelect(event)"/>
+          <div class="upload-icon">📤</div>
+          <div class="upload-text">Drag & drop or click to upload</div>
+          <div class="upload-sub">PNG, JPG, GIF, MP4, GLB • Max 100MB</div>
+        </div>
+        <div id="previewWrap" style="display:none;margin-bottom:16px;text-align:center;">
+          <img id="uploadPreview" class="upload-preview" src="" alt="Preview"/>
+          <div style="font-size:12px;color:var(--silver-mid);margin-top:6px;" id="fileName"></div>
+        </div>
+        <button class="btn-primary" onclick="mintNextStep(1)" id="stepBtn1">Continue →</button>
+      </div>
+
+      <!-- ── STEP 2: Details ── -->
+      <div id="mintStep2" style="display:none;">
+        <div class="field-group">
+          <label class="field-label">NFT Name *</label>
+          <input class="field-input" id="mintName" type="text" placeholder="e.g. Walrus Genesis #001"/>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Description</label>
+          <textarea class="field-input" id="mintDesc" placeholder="Describe your NFT…"></textarea>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Collection</label>
+          <input class="field-input" id="mintCollection" type="text" placeholder="e.g. Walrus Genesis"/>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Traits / Properties</label>
+          <div class="traits-wrap" id="traitsWrap">
+            <div class="trait-row">
+              <input class="field-input" placeholder="Type (e.g. Background)" style="font-size:12px;padding:9px 12px;"/>
+              <input class="field-input" placeholder="Value (e.g. Ocean)" style="font-size:12px;padding:9px 12px;"/>
+              <button class="rm-trait" onclick="this.closest('.trait-row').remove()">✕</button>
+            </div>
+          </div>
+          <button class="add-trait-btn" onclick="addTrait()">+ Add Trait</button>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn-outline" style="flex:1;" onclick="mintNextStep(-1,2)">← Back</button>
+          <button class="btn-primary" style="flex:2;" onclick="mintNextStep(2)">Continue →</button>
+        </div>
+      </div>
+
+      <!-- ── STEP 3: Pricing ── -->
+      <div id="mintStep3" style="display:none;">
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label">Mint Price (MIST)</label>
+            <input class="field-input" id="mintPrice" type="number" min="0" placeholder="e.g. 1000000000" value="1000000000"/>
+            <div style="font-size:11px;color:var(--silver-dark);margin-top:4px;" id="suiDisplay">≈ 1.00 SUI</div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Media Type</label>
+            <select class="field-input" id="mintMediaType" style="appearance:none;background-image:none;">
+              <option value="image/png">PNG Image</option>
+              <option value="image/jpeg">JPEG Image</option>
+              <option value="image/gif">GIF</option>
+              <option value="video/mp4">MP4 Video</option>
+              <option value="model/gltf-binary">3D (GLB)</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Royalty (%)</label>
+          <div class="slider-wrap">
+            <div class="range-val" id="royaltyDisplay">5%</div>
+            <input type="range" class="range-slider" id="royaltySlider" min="0" max="100" value="5"
+              oninput="updateRoyalty(this.value)" style="--val:5%;"/>
+          </div>
+        </div>
+        <div class="field-group mt-16" style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:14px;padding:14px;">
+          <div style="font-size:11px;color:var(--silver-mid);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Summary</div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span style="color:var(--silver-mid);">Mint price</span><span class="text-gold fw-700" id="summaryPrice">1.00 SUI</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span style="color:var(--silver-mid);">Royalty</span><span id="summaryRoyalty">5%</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--silver-mid);">Network</span><span>SUI Testnet</span></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:20px;">
+          <button class="btn-outline" style="flex:1;" onclick="mintNextStep(-1,3)">← Back</button>
+          <button class="btn-primary" style="flex:2;" onclick="mintNextStep(3)">Review & Mint →</button>
+        </div>
+      </div>
+
+      <!-- ── STEP 4: Confirm & Mint ── -->
+      <div id="mintStep4" style="display:none;">
+        <div style="text-align:center;padding:20px 0;">
+          <div style="font-size:64px;margin-bottom:12px;" id="mintFinalIcon">🎨</div>
+          <div style="font-family:var(--font-display);font-size:20px;font-weight:700;margin-bottom:6px;" id="mintFinalName">Your NFT</div>
+          <div style="font-size:13px;color:var(--silver-mid);" id="mintFinalCollection">Collection</div>
+          <div style="font-size:24px;font-weight:800;color:var(--gold-light);margin-top:10px;" id="mintFinalPrice">— SUI</div>
+        </div>
+        <div id="mintChecklist" style="background:var(--surface);border-radius:14px;padding:16px;margin-bottom:20px;">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--glass-border);">
+            <span id="check1">⏳</span><span style="font-size:13px;">Upload to Walrus storage</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--glass-border);">
+            <span id="check2">⏳</span><span style="font-size:13px;">Build mint transaction</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;">
+            <span id="check3">⏳</span><span style="font-size:13px;">Sign & submit to SUI</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn-outline" style="flex:1;" onclick="mintNextStep(-1,4)" id="mintBackBtn">← Back</button>
+          <button class="btn-primary" style="flex:2;" id="mintSubmitBtn" onclick="submitMint()">🚀 Mint NFT</button>
+        </div>
+      </div>
+
+    </div><!-- end mint-card -->
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE: WISHLIST
+══════════════════════════════════════════════ -->
+<div class="page" id="page-wishlist">
+  <div class="container">
+    <div class="section-header mt-16 mb-24">
+      <h2 class="section-title">❤️ My <span class="accent">Wishlist</span></h2>
+      <span style="font-size:13px;color:var(--silver-mid);" id="wishlistCount">0 items</span>
+    </div>
+    <div id="wishlistContent">
+      <div class="wishlist-empty">
+        <div class="empty-icon">❤️</div>
+        <h3>No favourites yet</h3>
+        <p>Tap the heart on any NFT to add it here</p>
+        <button class="btn-primary" style="max-width:200px;margin-top:8px;" onclick="navigateTo('home')">Browse NFTs</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE: COLLECTION (WALLET)
+══════════════════════════════════════════════ -->
+<div class="page" id="page-collection">
+  <div class="container">
+
+    <!-- Wallet header -->
+    <div class="collection-header mt-16">
+      <div class="col-avatar">🐋</div>
+      <div class="col-info">
+        <div class="col-name">My Collection</div>
+        <div class="col-addr" id="colAddr">0x3f4a…8b2c</div>
+        <div class="col-stats">
+          <div class="col-stat"><div class="cs-val" id="colCount">0</div><div class="cs-label">NFTs</div></div>
+          <div class="col-stat"><div class="cs-val" id="colVal">—</div><div class="cs-label">Est. Value</div></div>
+          <div class="col-stat"><div class="cs-val" id="colListed">0</div><div class="cs-label">Listed</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="total-value-banner">
+      <div>
+        <div class="tv-label">Total Portfolio Value</div>
+        <div class="tv-val" id="totalPortfolioVal">— SUI</div>
+        <div class="tv-sub" id="portfolioSub">Connect wallet to see your NFTs</div>
+      </div>
+      <button class="btn-gold" onclick="navigateTo('mint')">+ Mint New</button>
+    </div>
+
+    <div id="collectionContent">
+      <div class="owned-grid" id="ownedGrid">
+        <!-- shimmer -->
+        <div class="shimmer" style="border-radius:20px;aspect-ratio:1;"></div>
+        <div class="shimmer" style="border-radius:20px;aspect-ratio:1;"></div>
+        <div class="shimmer" style="border-radius:20px;aspect-ratio:1;"></div>
+        <div class="shimmer" style="border-radius:20px;aspect-ratio:1;"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PAGE: NFT DETAIL
+══════════════════════════════════════════════ -->
+<div class="page" id="page-detail">
+  <div class="container">
+
+    <div class="detail-hero">
+      <div class="detail-ph" id="detailImage">🖼️</div>
+      <button class="back-btn" onclick="goBack()">←</button>
+      <button class="share-btn" onclick="showToast('Link copied!','success')">🔗</button>
+    </div>
+
+    <div class="detail-info">
+      <div class="detail-collection" id="detailCollection">Collection</div>
+      <div class="detail-name" id="detailName">NFT Name</div>
+      <div class="detail-creator">Created by <span id="detailCreator">0x…</span></div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;" id="detailTraits"></div>
+    </div>
+
+    <!-- Buy / Bid Panel -->
+    <div class="buy-bid-panel">
+      <div class="bbp-price-label">Current Price</div>
+      <div class="bbp-price"><span id="detailPrice">—</span><span class="bbp-usd" id="detailUSD"></span></div>
+      <div class="bbp-actions">
+        <button class="btn-buy" onclick="handleBuy()" id="buyBtn">
+          ⚡ Buy Now
+        </button>
+        <button class="btn-bid" onclick="openBidModal()" id="bidBtn">
+          🏷️ Place Bid
+        </button>
+      </div>
+    </div>
+
+    <!-- Description -->
+    <div style="background:var(--glass);border:1px solid var(--glass-border);border-radius:var(--radius-xl);padding:18px;margin-bottom:20px;" id="descBlock">
+      <div style="font-size:11px;color:var(--silver-mid);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Description</div>
+      <div style="font-size:14px;color:var(--silver);line-height:1.6;" id="detailDesc">—</div>
+    </div>
+
+    <!-- Related Collection 2x2 grid -->
+    <div class="related-collection">
+      <h3 id="relatedTitle">More from this Collection</h3>
+      <div class="related-grid" id="relatedGrid">
+        <div class="shimmer" style="border-radius:var(--radius-lg);aspect-ratio:1;"></div>
+        <div class="shimmer" style="border-radius:var(--radius-lg);aspect-ratio:1;"></div>
+        <div class="shimmer" style="border-radius:var(--radius-lg);aspect-ratio:1;"></div>
+        <div class="shimmer" style="border-radius:var(--radius-lg);aspect-ratio:1;"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BID MODAL
+══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="bidModal" onclick="closeBidModal(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <h3>Place a Bid</h3>
+    <div style="font-size:13px;color:var(--silver-mid);margin-bottom:16px;">Current price: <span class="text-gold fw-700" id="bidCurrentPrice">—</span></div>
+
+    <label class="field-label">Your Offer (MIST)</label>
+    <input class="field-input" id="bidAmount" type="number" placeholder="e.g. 2000000000" style="margin-bottom:8px;"/>
+    <div style="font-size:11px;color:var(--silver-mid);margin-bottom:16px;" id="bidSUIDisplay">≈ 0 SUI</div>
+
+    <label class="field-label">Bid Duration</label>
+    <div class="bid-duration" id="bidDurations">
+      <button class="dur-pill active" data-hrs="1">1 Hour</button>
+      <button class="dur-pill" data-hrs="24">24 Hours</button>
+      <button class="dur-pill" data-hrs="72">3 Days</button>
+      <button class="dur-pill" data-hrs="168">7 Days</button>
+    </div>
+
+    <div style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:12px;padding:14px;margin-bottom:20px;">
+      <div style="font-size:12px;color:var(--silver-mid);line-height:1.5;">
+        ℹ️ Your bid will be locked in escrow until the seller accepts or the duration expires. You can cancel anytime before acceptance.
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <button class="btn-outline" onclick="closeBidModal()">Cancel</button>
+      <button class="btn-bid" onclick="submitBid()">Submit Bid</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     BOTTOM NAV — LIQUID MERCURY
+══════════════════════════════════════════════ -->
+<nav class="bottom-nav" id="bottomNav">
+  <div class="nav-mercury" id="navMercury"></div>
+  <button class="nav-item active" data-page="home" onclick="navigateTo('home')">
+    <span class="nav-icon">🏠</span>
+    <span>Home</span>
+  </button>
+  <button class="nav-item" data-page="mint" onclick="navigateTo('mint')">
+    <span class="nav-icon">⚡</span>
+    <span>Mint</span>
+  </button>
+  <button class="nav-item" data-page="wishlist" onclick="navigateTo('wishlist')">
+    <span class="nav-icon">❤️</span>
+    <span>Wishlist</span>
+  </button>
+  <button class="nav-item" data-page="collection" onclick="navigateTo('collection')">
+    <span class="nav-icon">🖼️</span>
+    <span>Collection</span>
+  </button>
+</nav>
+
+</div><!-- end page-wrap -->
+
+<script>
+/* ════════════════════════════════════════════════════════
+   CONFIG
+════════════════════════════════════════════════════════ */
+const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const BACKEND = isLocal ? 'http://localhost:3001' : 'https://backend-production-385e.up.railway.app';
+const WALRUS_PUB = 'https://publisher.walrus-testnet.walrus.space/v1/blobs';
+
+/* ════════════════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════════════════ */
+let state = {
+  page: 'home',
+  prevPage: 'home',
+  nfts: [],
+  wishlist: JSON.parse(localStorage.getItem('wm_wishlist') || '[]'),
+  walletAddress: localStorage.getItem('wm_wallet') || '0x3f4a8e2b1c9d5f0a7e3b6c4d2f1a9e8b',
+  suiBalance: null,
+  currentNFT: null,
+  dragStart: null,
+  currentStackIdx: 0,
+};
+
+/* ════════════════════════════════════════════════════════
+   ANIMATED BACKGROUND NEBULA
+════════════════════════════════════════════════════════ */
+(function initBG() {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  class Particle {
+    constructor() { this.reset(); }
+    reset() {
+      this.x = Math.random() * W;
+      this.y = Math.random() * H;
+      this.r = Math.random() * 280 + 60;
+      this.a = Math.random() * Math.PI * 2;
+      this.speed = (Math.random() - .5) * .0004;
+      this.opacity = Math.random() * .06 + .01;
+      const cols = ['rgba(26,86,219,', 'rgba(59,130,246,', 'rgba(201,162,39,', 'rgba(192,200,216,', 'rgba(13,40,96,'];
+      this.color = cols[Math.floor(Math.random() * cols.length)];
+    }
+    draw() {
+      this.a += this.speed;
+      const grd = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r);
+      grd.addColorStop(0, this.color + this.opacity + ')');
+      grd.addColorStop(1, this.color + '0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  resize();
+  for (let i = 0; i < 8; i++) particles.push(new Particle());
+  window.addEventListener('resize', resize);
+
+  function loop() {
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => p.draw());
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+
+/* ════════════════════════════════════════════════════════
+   NAVIGATION
+════════════════════════════════════════════════════════ */
+function navigateTo(page) {
+  const current = document.querySelector('.page.active');
+  if (current) current.classList.remove('active');
+  const next = document.getElementById('page-' + page);
+  if (next) {
+    next.classList.add('active');
+    next.scrollTop = 0;
+  }
+  state.prevPage = state.page;
+  state.page = page;
+
+  // update nav
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  const activeBtn = document.querySelector(`.nav-item[data-page="${page}"]`);
+  if (activeBtn) {
+    activeBtn.classList.add('active');
+    positionMercury(activeBtn);
+  }
+
+  // show/hide bottom nav on detail
+  document.getElementById('bottomNav').style.display = page === 'detail' ? 'none' : '';
+
+  // page-specific loads
+  if (page === 'home')    loadHomeData();
+  if (page === 'collection') loadCollectionData();
+  if (page === 'wishlist')   renderWishlist();
+
+  closeProfile();
+}
+
+function goBack() {
+  navigateTo(state.prevPage === 'detail' ? 'home' : state.prevPage);
+}
+
+/* mercury position */
+function positionMercury(btn) {
+  const nav = document.getElementById('bottomNav');
+  const mercury = document.getElementById('navMercury');
+  const navRect = nav.getBoundingClientRect();
+  const btnRect = btn.getBoundingClientRect();
+  mercury.style.left = (btnRect.left - navRect.left + nav.scrollLeft) + 'px';
+  mercury.style.top  = (btnRect.top  - navRect.top)  + 'px';
+  mercury.style.width = btnRect.width + 'px';
+  mercury.style.height = btnRect.height + 'px';
+}
+
+/* ════════════════════════════════════════════════════════
+   PROFILE DROPDOWN
+════════════════════════════════════════════════════════ */
+function toggleProfile() {
+  const dd = document.getElementById('profileDropdown');
+  dd.classList.toggle('open');
+  if (dd.classList.contains('open')) {
+    updateProfileUI();
+  }
+}
+function closeProfile() {
+  document.getElementById('profileDropdown').classList.remove('open');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('#profileBtn') && !e.target.closest('#profileDropdown')) closeProfile();
+});
+
+function updateProfileUI() {
+  const addr = state.walletAddress;
+  document.getElementById('pdAddress').textContent = addr ? addr.slice(0,6) + '…' + addr.slice(-4) : 'Not connected';
+  document.getElementById('colAddr').textContent = addr ? addr.slice(0,6) + '…' + addr.slice(-4) : '—';
+  document.getElementById('pdBalance').textContent = state.suiBalance !== null ? state.suiBalance.toFixed(2) + ' SUI' : 'Fetching…';
+}
+
+/* ════════════════════════════════════════════════════════
+   TOAST
+════════════════════════════════════════════════════════ */
+function showToast(msg, type = 'info', emoji = '') {
+  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span>${emoji || icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+
+/* ════════════════════════════════════════════════════════
+   LOAD HOME DATA
+════════════════════════════════════════════════════════ */
+async function loadHomeData() {
+  try {
+    const [nfts, activity, rankings] = await Promise.all([
+      fetch(`${BACKEND}/nfts`).then(r => r.json()).catch(() => []),
+      fetch(`${BACKEND}/activity`).then(r => r.json()).catch(() => []),
+      fetch(`${BACKEND}/rankings`).then(r => r.json()).catch(() => []),
+    ]);
+
+    state.nfts = Array.isArray(nfts) ? nfts : [];
+
+    // Fallback demo data if backend unreachable
+    if (state.nfts.length === 0) {
+      state.nfts = getDemoNFTs();
+    }
+
+    renderTrendingStack(state.nfts.slice(0, 5));
+    renderNFTRow('newReleasesRow', state.nfts.slice(0, 8));
+    renderNFTRow('soldRow', [...state.nfts].reverse().slice(0, 6));
+    renderActivity(Array.isArray(activity) ? activity : getDemoActivity());
+    renderRankings(Array.isArray(rankings) && rankings.length ? rankings : getDemoRankings());
+    updateStats();
+  } catch(e) {
+    const demo = getDemoNFTs();
+    state.nfts = demo;
+    renderTrendingStack(demo.slice(0,5));
+    renderNFTRow('newReleasesRow', demo.slice(0,8));
+    renderNFTRow('soldRow', [...demo].reverse().slice(0,6));
+    renderActivity(getDemoActivity());
+    renderRankings(getDemoRankings());
+    updateStats();
+  }
+}
+
+function updateStats() {
+  const n = state.nfts;
+  document.getElementById('stat-nfts').textContent = n.length;
+  const prices = n.map(x => parseFloat(x.price) || 0).filter(Boolean);
+  const floor = prices.length ? Math.min(...prices).toFixed(2) : '—';
+  const vol = prices.reduce((a,b) => a+b, 0).toFixed(1);
+  document.getElementById('stat-floor').textContent = floor + ' SUI';
+  document.getElementById('stat-vol').textContent = vol + ' SUI';
+}
+
+/* ════════════════════════════════════════════════════════
+   DEMO DATA
+════════════════════════════════════════════════════════ */
+const EMOJIS = ['🌊','🐋','🦈','🐬','🐙','🦑','🐠','🐟','🦭','🦞','🐡','🦀'];
+const COLLS  = ['Ocean Genesis','Deep Sea','Walrus Club','SUI Punks','Cosmic Wave','Neon Tides'];
+
+function getDemoNFTs() {
+  return Array.from({length:20}, (_,i) => ({
+    id: '0x'+Math.random().toString(16).slice(2,10)+i,
+    name: ['Walrus #'+i, 'Deep Blue #'+i, 'Ocean Ghost #'+i, 'Sui Wave #'+i][i%4],
+    collection: COLLS[i%COLLS.length],
+    price: (Math.random()*5+0.5).toFixed(2)+' SUI',
+    rarity: ['Common','Rare','Epic','Legendary'][Math.floor(Math.random()*4)],
+    type: 'art',
+    art: null,
+    emoji: EMOJIS[i%EMOJIS.length],
+    creator: '0x'+Math.random().toString(16).slice(2,18),
+    description: 'A unique NFT minted on SUI blockchain, stored on Walrus decentralized storage. Part of the exclusive '+COLLS[i%COLLS.length]+' collection.',
+  }));
+}
+
+function getDemoActivity() {
+  return [
+    { verb:'Minted', item:'Walrus #001', price:'1.50 SUI', actor:'0x3f4a…', time: new Date().toISOString() },
+    { verb:'Sold',   item:'Deep Blue #22', price:'3.20 SUI', actor:'0xa1b2…', time: new Date(Date.now()-60000).toISOString() },
+    { verb:'Minted', item:'Ocean Ghost #7', price:'0.80 SUI', actor:'0xc3d4…', time: new Date(Date.now()-120000).toISOString() },
+    { verb:'Sold',   item:'Sui Wave #15', price:'5.00 SUI', actor:'0xe5f6…', time: new Date(Date.now()-300000).toISOString() },
+  ];
+}
+
+function getDemoRankings() {
+  return COLLS.map((col, i) => ({
+    collection: col,
+    volume: (Math.random()*100+10).toFixed(1)+' SUI',
+    minted: Math.floor(Math.random()*50+5),
+    sales: Math.floor(Math.random()*20+1),
+    change: (Math.random() * 40 - 10).toFixed(1),
+  }));
+}
+
+/* ════════════════════════════════════════════════════════
+   TRENDING CARD STACK
+════════════════════════════════════════════════════════ */
+function renderTrendingStack(nfts) {
+  const container = document.getElementById('nftStack');
+  container.innerHTML = '';
+  if (!nfts.length) return;
+
+  nfts.slice(0, 4).reverse().forEach((nft, i) => {
+    const card = document.createElement('div');
+    card.className = 'nft-stack-card';
+    card.style.zIndex = i;
+    card.innerHTML = nftCardImageHTML(nft, true) + nftStackInfoHTML(nft);
+    
+    // click on image → detail
+    card.querySelector('.nft-img-wrap').addEventListener('click', () => openDetail(nft));
+    // like btn
+    card.querySelector('.like-btn').addEventListener('click', e => { e.stopPropagation(); toggleWishlist(nft, e.currentTarget); });
+    
+    container.appendChild(card);
+  });
+
+  // arrange stacking
+  const cards = [...container.querySelectorAll('.nft-stack-card')];
+  const total = cards.length;
+  cards.forEach((c, i) => {
+    const depth = total - 1 - i;
+    if (depth === 0) {
+      c.style.transform = 'translateX(0) translateY(0) scale(1)';
+      c.style.opacity = '1';
+      c.style.zIndex = total;
+    } else {
+      c.style.transform = `translateX(-${depth*12}px) translateY(${depth*9}px) scale(${1 - depth*.04})`;
+      c.style.opacity = (1 - depth*.25).toString();
+      c.style.zIndex = total - depth;
+    }
+  });
+
+  // swipe gesture on top card
+  setupSwipe(container);
+}
+
+function nftCardImageHTML(nft, big = false) {
+  const bg = nft.art && !nft.art.startsWith('linear') 
+    ? `<img class="nft-img" src="${nft.art}" alt="${nft.name}" onerror="this.style.display='none';this.nextSibling.style.display='flex'"/>
+       <div class="nft-img-placeholder" style="display:none;background:linear-gradient(135deg,${randomGrad()});">${nft.emoji||'🖼️'}</div>`
+    : `<div class="nft-img-placeholder" style="background:linear-gradient(135deg,${randomGrad()});">${nft.emoji||'🖼️'}</div>`;
+  return `<div class="nft-img-wrap" style="flex:1;min-height:0;overflow:hidden;">${bg}</div>`;
+}
+
+function nftStackInfoHTML(nft) {
+  const isLiked = state.wishlist.some(w => w.id === nft.id);
+  const price = nft.price || '—';
+  return `
+    <div class="nft-stack-info">
+      <div>
+        <div style="font-size:10px;color:var(--silver-mid);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">${nft.collection||'Collection'}</div>
+        <div class="nft-name">${nft.name}</div>
+      </div>
+      <div class="nft-price-wrap">
+        <div>
+          <div class="nft-price-label">Mint Price</div>
+          <div class="nft-price">${price}</div>
+        </div>
+        <button class="like-btn ${isLiked?'liked':''}">
+          ${isLiked ? '❤️' : '🤍'}
+        </button>
+      </div>
+    </div>`;
+}
+
+function randomGrad() {
+  const pairs = [
+    '#0A1628,#0D2860','#0D2860,#1A56DB','#1A56DB,#3B82F6',
+    '#0A1628,#4A6494','#060E1E,#0D2860','#0A1628,#C9A227'
+  ];
+  return pairs[Math.floor(Math.random()*pairs.length)];
+}
+
+function setupSwipe(container) {
+  let startX = 0, isDragging = false;
+  const topCard = () => container.querySelector('.nft-stack-card:last-child');
+
+  container.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    isDragging = true;
+  }, {passive:true});
+  container.addEventListener('touchmove', e => {
+    if (!isDragging) return;
+    const dx = e.touches[0].clientX - startX;
+    const tc = topCard();
+    if (tc) tc.style.transform = `translateX(${dx}px) rotate(${dx*0.03}deg) scale(1)`;
+  }, {passive:true});
+  container.addEventListener('touchend', e => {
+    if (!isDragging) return;
+    isDragging = false;
+    const dx = e.changedTouches[0].clientX - startX;
+    const tc = topCard();
+    if (!tc) return;
+    if (Math.abs(dx) > 60) {
+      // swipe out
+      tc.style.transition = 'transform .3s ease, opacity .3s';
+      tc.style.transform = `translateX(${dx > 0 ? 400 : -400}px) rotate(${dx > 0 ? 30 : -30}deg)`;
+      tc.style.opacity = '0';
+      setTimeout(() => { tc.remove(); reshuffleStack(container); }, 300);
+    } else {
+      tc.style.transition = 'transform .3s';
+      tc.style.transform = 'translateX(0) scale(1)';
+      setTimeout(() => tc.style.transition = '', 300);
+    }
+  });
+
+  // mouse drag
+  container.addEventListener('mousedown', e => { startX = e.clientX; isDragging = true; });
+  container.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    const dx = e.clientX - startX;
+    const tc = topCard();
+    if (tc) tc.style.transform = `translateX(${dx}px) rotate(${dx*0.03}deg) scale(1)`;
+  });
+  container.addEventListener('mouseup', e => {
+    if (!isDragging) return;
+    isDragging = false;
+    const dx = e.clientX - startX;
+    const tc = topCard();
+    if (!tc) return;
+    if (Math.abs(dx) > 60) {
+      tc.style.transition = 'transform .3s, opacity .3s';
+      tc.style.transform = `translateX(${dx > 0 ? 400 : -400}px) rotate(${dx > 0 ? 30 : -30}deg)`;
+      tc.style.opacity = '0';
+      setTimeout(() => { tc.remove(); reshuffleStack(container); }, 300);
+    } else {
+      tc.style.transition = 'transform .3s';
+      tc.style.transform = 'translateX(0) scale(1)';
+      setTimeout(() => tc.style.transition = '', 300);
+    }
+  });
+}
+
+function reshuffleStack(container) {
+  const cards = [...container.querySelectorAll('.nft-stack-card')];
+  const total = cards.length;
+  cards.forEach((c, i) => {
+    const depth = total - 1 - i;
+    c.style.transition = 'transform .4s cubic-bezier(.34,1.2,.64,1), opacity .4s';
+    if (depth === 0) {
+      c.style.transform = 'translateX(0) translateY(0) scale(1)';
+      c.style.opacity = '1';
+      c.style.zIndex = total;
+    } else {
+      c.style.transform = `translateX(-${depth*12}px) translateY(${depth*9}px) scale(${1 - depth*.04})`;
+      c.style.opacity = (1 - depth*.25).toString();
+      c.style.zIndex = total - depth;
+    }
+  });
+}
+
+/* ════════════════════════════════════════════════════════
+   NFT ROWS
+════════════════════════════════════════════════════════ */
+function renderNFTRow(containerId, nfts) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = nfts.map(nft => `
+    <div class="nft-card liquid-glass" onclick="openDetail(${JSON.stringify(nft).replace(/"/g,'&quot;')})">
+      ${nft.art && !nft.art.startsWith('linear')
+        ? `<img class="nft-thumb" src="${nft.art}" alt="${nft.name}" onerror="this.style.display='none';this.nextSibling.style.display='flex'"/>
+           <div class="nft-thumb-ph" style="display:none;background:linear-gradient(135deg,${randomGrad()});">${nft.emoji||'🖼️'}</div>`
+        : `<div class="nft-thumb-ph" style="background:linear-gradient(135deg,${randomGrad()});">${nft.emoji||'🖼️'}</div>`
+      }
+      <span class="rarity-badge rarity-${nft.rarity}">${nft.rarity}</span>
+      <div class="card-info">
+        <div class="card-name">${nft.name}</div>
+        <div class="card-price">${nft.price||'—'}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ════════════════════════════════════════════════════════
+   ACTIVITY FEED
+════════════════════════════════════════════════════════ */
+function renderActivity(items) {
+  const el = document.getElementById('activityFeed');
+  if (!el) return;
+  el.innerHTML = items.slice(0,6).map(a => `
+    <div class="activity-item">
+      <div class="act-icon">${a.verb === 'Minted' ? '⚡' : '💸'}</div>
+      <div class="act-body">
+        <div class="act-title">${a.item}</div>
+        <div class="act-sub">${a.verb} by ${(a.actor||'').slice(0,8)}… · ${timeAgo(a.time)}</div>
+      </div>
+      <div class="act-price">${a.price}</div>
+    </div>
+  `).join('');
+}
+
+function timeAgo(iso) {
+  const diff = Date.now() - new Date(iso).getTime();
+  if (diff < 60000) return 'just now';
+  if (diff < 3600000) return Math.floor(diff/60000) + 'm ago';
+  if (diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
+  return Math.floor(diff/86400000) + 'd ago';
+}
+
+/* ════════════════════════════════════════════════════════
+   RANKINGS
+════════════════════════════════════════════════════════ */
+function renderRankings(data) {
+  const tbody = document.getElementById('rankingsBody');
+  if (!tbody) return;
+  tbody.innerHTML = data.slice(0,6).map((r, i) => {
+    const chg = parseFloat(r.change || (Math.random()*40-10));
+    return `
+    <tr>
+      <td><span class="rank-num">${i+1}</span></td>
+      <td><strong>${r.collection}</strong></td>
+      <td style="font-weight:700;color:var(--gold-light);">${r.volume}</td>
+      <td>${r.minted}</td>
+      <td><span class="${chg >= 0 ? 'rank-pos' : 'rank-neg'}">${chg >= 0 ? '▲' : '▼'} ${Math.abs(chg).toFixed(1)}%</span></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════════════════════
+   WISHLIST
+════════════════════════════════════════════════════════ */
+function toggleWishlist(nft, btn) {
+  const idx = state.wishlist.findIndex(w => w.id === nft.id);
+  if (idx === -1) {
+    state.wishlist.push(nft);
+    if (btn) { btn.classList.add('liked'); btn.textContent = '❤️'; }
+    showToast('Added to wishlist', 'success', '❤️');
+  } else {
+    state.wishlist.splice(idx, 1);
+    if (btn) { btn.classList.remove('liked'); btn.textContent = '🤍'; }
+    showToast('Removed from wishlist', 'info');
+  }
+  localStorage.setItem('wm_wishlist', JSON.stringify(state.wishlist));
+  document.getElementById('wishlistCount').textContent = state.wishlist.length + ' items';
+}
+
+function renderWishlist() {
+  const content = document.getElementById('wishlistContent');
+  const count = document.getElementById('wishlistCount');
+  count.textContent = state.wishlist.length + ' items';
+  if (!state.wishlist.length) {
+    content.innerHTML = `
+      <div class="wishlist-empty">
+        <div class="empty-icon">❤️</div>
+        <h3>No favourites yet</h3>
+        <p>Tap the heart on any NFT to add it here</p>
+        <button class="btn-primary" style="max-width:200px;margin-top:8px;" onclick="navigateTo('home')">Browse NFTs</button>
+      </div>`;
+    return;
+  }
+  content.innerHTML = `<div class="wishlist-grid">${
+    state.wishlist.map(nft => `
+      <div class="wishlist-card" onclick="openDetail(${JSON.stringify(nft).replace(/"/g,'&quot;')})">
+        ${nft.art && !nft.art.startsWith('linear')
+          ? `<img class="wc-img" src="${nft.art}" alt="${nft.name}" onerror="this.style.display='none';this.nextSibling.style.display='flex'"/>
+             <div class="wc-img-ph" style="display:none;background:linear-gradient(135deg,${randomGrad()});">${nft.emoji||'🖼️'}</div>`
+          : `<div class="wc-img-ph" style="background:linear-gradient(135deg,${randomGrad()});">${nft.emoji||'🖼️'}</div>`
+        }
+        <div class="wc-body">
+          <div class="wc-name">${nft.name}</div>
+          <div class="wc-col">${nft.collection}</div>
+          <div class="wc-price">${nft.price||'—'}</div>
+        </div>
+        <button class="wc-remove" onclick="event.stopPropagation();removeFromWishlist('${nft.id}',this)">✕</button>
+      </div>
+    `).join('')
+  }</div>`;
+}
+
+function removeFromWishlist(id, btn) {
+  const idx = state.wishlist.findIndex(w => w.id === id);
+  if (idx !== -1) {
+    state.wishlist.splice(idx, 1);
+    localStorage.setItem('wm_wishlist', JSON.stringify(state.wishlist));
+    btn.closest('.wishlist-card').remove();
+    document.getElementById('wishlistCount').textContent = state.wishlist.length + ' items';
+    if (!state.wishlist.length) renderWishlist();
+  }
+}
+
+/* ════════════════════════════════════════════════════════
+   COLLECTION (OWNED)
+════════════════════════════════════════════════════════ */
+async function loadCollectionData() {
+  try {
+    const addr = state.walletAddress;
+    let owned = [];
+    try {
+      const r = await fetch(`${BACKEND}/nfts/owner/${addr}`);
+      owned = await r.json();
+    } catch { owned = []; }
+
+    if (!Array.isArray(owned) || !owned.length) {
+      // show some demo
+      owned = getDemoNFTs().slice(0, 6).map(n => ({...n, owned:true}));
+    }
+
+    const grid = document.getElementById('ownedGrid');
+    const totalSUI = owned.reduce((s, n) => s + (parseFloat(n.price) || 0), 0).toFixed(2);
+    
+    document.getElementById('colCount').textContent = owned.length;
+    document.getElementById('colVal').textContent = totalSUI + ' SUI';
+    document.getElementById('colListed').textContent = owned.filter(n => n.listed).length;
+    document.getElementById('totalPortfolioVal').textContent = totalSUI + ' SUI';
+    document.getElementById('portfolioSub').textContent = owned.length + ' NFTs across ' + new Set(owned.map(n=>n.collection)).size + ' collections';
+
+    grid.innerHTML = owned.map(nft => `
+      <div class="owned-card liquid-glass" onclick="openDetail(${JSON.stringify(nft).replace(/"/g,'&quot;')})">
+        ${nft.art && !nft.art.startsWith('linear')
+          ? `<img class="oc-img" src="${nft.art}" alt="${nft.name}" onerror="this.style.display='none';this.nextSibling.style.display='flex'"/>
+             <div class="oc-img-ph" style="display:none;background:linear-gradient(135deg,${randomGrad()});">${nft.emoji||'🖼️'}</div>`
+          : `<div class="oc-img-ph" style="background:linear-gradient(135deg,${randomGrad()});">${nft.emoji||'🖼️'}</div>`
+        }
+        <span class="oc-rarity rarity-${nft.rarity}">${nft.rarity}</span>
+        <div class="oc-body">
+          <div class="oc-name">${nft.name}</div>
+          <div class="oc-value">${nft.price||'—'}</div>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+/* ════════════════════════════════════════════════════════
+   NFT DETAIL PAGE
+════════════════════════════════════════════════════════ */
+function openDetail(nft) {
+  if (typeof nft === 'string') nft = JSON.parse(nft);
+  state.currentNFT = nft;
+  state.prevPage = state.page;
+
+  // Set image
+  const imgEl = document.getElementById('detailImage');
+  if (nft.art && !nft.art.startsWith('linear')) {
+    imgEl.innerHTML = `<img src="${nft.art}" alt="${nft.name}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='<div class=detail-ph style=background:linear-gradient(135deg,${randomGrad()})>${nft.emoji||'🖼️'}</div>'"/>`;
+  } else {
+    imgEl.innerHTML = `<div class="detail-ph" style="background:linear-gradient(135deg,${randomGrad()});">${nft.emoji||'🖼️'}</div>`;
+  }
+  imgEl.className = ''; // reset class
+  
+  document.getElementById('detailCollection').textContent = nft.collection || '—';
+  document.getElementById('detailName').textContent = nft.name || 'Unnamed NFT';
+  document.getElementById('detailCreator').textContent = (nft.creator||'Unknown').slice(0,18)+'…';
+  document.getElementById('detailDesc').textContent = nft.description || 'No description provided.';
+  document.getElementById('detailPrice').textContent = nft.price || '—';
+
+  // Traits
+  const traitsEl = document.getElementById('detailTraits');
+  const traits = nft.traits || [{type:'Rarity', value: nft.rarity||'Common'}, {type:'Collection', value: nft.collection||'—'}];
+  traitsEl.innerHTML = traits.map(t => `
+    <div style="background:var(--glass);border:1px solid var(--glass-border);border-radius:10px;padding:6px 12px;text-align:center;">
+      <div style="font-size:9px;color:var(--blue-glow);font-weight:700;text-transform:uppercase;letter-spacing:.06em;">${t.type}</div>
+      <div style="font-size:13px;font-weight:600;margin-top:1px;">${t.value}</div>
+    </div>
+  `).join('');
+
+  // Related
+  const related = state.nfts.filter(n => n.id !== nft.id && n.collection === nft.collection).slice(0,4);
+  const fallback = state.nfts.filter(n => n.id !== nft.id).slice(0,4);
+  renderRelatedGrid(related.length >= 2 ? related : fallback, nft.collection);
+
+  navigateTo('detail');
+}
+
+function renderRelatedGrid(nfts, colName) {
+  document.getElementById('relatedTitle').textContent = `More from ${colName||'this Collection'}`;
+  document.getElementById('relatedGrid').innerHTML = nfts.slice(0,4).map(nft => `
+    <div class="related-card" onclick="openDetail(${JSON.stringify(nft).replace(/"/g,'&quot;')})">
+      ${nft.art && !nft.art.startsWith('linear')
+        ? `<img src="${nft.art}" alt="${nft.name}" style="width:100%;aspect-ratio:1;object-fit:cover;" onerror="this.style.display='none';this.nextSibling.style.display='flex'"/>
+           <div class="rc-ph" style="display:none;background:linear-gradient(135deg,${randomGrad()});">${nft.emoji||'🖼️'}</div>`
+        : `<div class="rc-ph" style="background:linear-gradient(135deg,${randomGrad()});">${nft.emoji||'🖼️'}</div>`
+      }
+      <div class="rc-info">
+        <div class="rc-name">${nft.name}</div>
+        <div class="rc-price">${nft.price||'—'}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ════════════════════════════════════════════════════════
+   BUY / BID
+════════════════════════════════════════════════════════ */
+async function handleBuy() {
+  const nft = state.currentNFT;
+  if (!nft) return;
+  if (!state.walletAddress) { showToast('Please connect wallet first','error'); return; }
+
+  showToast('Preparing buy transaction…', 'info', '⚡');
+
+  try {
+    const priceNum = parseFloat(nft.price) * 1e9 || 1e9;
+    const body = { walletAddress: state.walletAddress, nftId: nft.id, price: Math.floor(priceNum) };
+    const r = await fetch(`${BACKEND}/marketplace/buy`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    const data = await r.json();
+    if (data.success) {
+      showToast('Transaction ready! Sign in your wallet.', 'success', '✅');
+    } else {
+      showToast(data.error || 'Buy failed', 'error');
+    }
+  } catch(e) {
+    showToast('Demo mode: no wallet connected', 'info', 'ℹ️');
+  }
+}
+
+function openBidModal() {
+  const nft = state.currentNFT;
+  if (nft) document.getElementById('bidCurrentPrice').textContent = nft.price || '—';
+  document.getElementById('bidModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeBidModal(e) {
+  if (!e || e.target === document.getElementById('bidModal')) {
+    document.getElementById('bidModal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+}
+
+// Duration pills
+document.getElementById('bidDurations').addEventListener('click', e => {
+  const p = e.target.closest('.dur-pill');
+  if (!p) return;
+  document.querySelectorAll('.dur-pill').forEach(x => x.classList.remove('active'));
+  p.classList.add('active');
+});
+
+document.getElementById('bidAmount').addEventListener('input', e => {
+  const v = parseFloat(e.target.value) || 0;
+  document.getElementById('bidSUIDisplay').textContent = '≈ ' + (v/1e9).toFixed(4) + ' SUI';
+});
+
+async function submitBid() {
+  const nft = state.currentNFT;
+  if (!nft) return;
+  const amount = parseInt(document.getElementById('bidAmount').value || 0);
+  if (!amount || amount <= 0) { showToast('Enter a valid bid amount', 'error'); return; }
+  const durHrs = parseInt(document.querySelector('.dur-pill.active')?.dataset.hrs || 24);
+
+  showToast('Submitting bid…', 'info', '🏷️');
+  try {
+    const r = await fetch(`${BACKEND}/marketplace/offer`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        walletAddress: state.walletAddress,
+        nftId: nft.id,
+        offerPrice: amount,
+        expiryMs: durHrs * 3600000
+      })
+    });
+    const data = await r.json();
+    closeBidModal();
+    if (data.success) {
+      showToast('Bid submitted! Sign in your wallet.', 'success', '🎉');
+    } else {
+      showToast(data.error || 'Bid failed', 'error');
+    }
+  } catch {
+    closeBidModal();
+    showToast('Demo mode: bid recorded locally', 'success', '🎉');
+  }
+}
+
+/* ════════════════════════════════════════════════════════
+   MINT FLOW
+════════════════════════════════════════════════════════ */
+let mintFile = null;
+let mintBlobId = null;
+let mintCurrentStep = 1;
+
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  mintFile = file;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('uploadPreview').src = ev.target.result;
+    document.getElementById('previewWrap').style.display = 'block';
+    document.getElementById('fileName').textContent = file.name + ' · ' + (file.size/1024).toFixed(0) + 'KB';
+    document.getElementById('uploadZone').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function addTrait() {
+  const wrap = document.getElementById('traitsWrap');
+  const row = document.createElement('div');
+  row.className = 'trait-row';
+  row.innerHTML = `
+    <input class="field-input" placeholder="Type" style="font-size:12px;padding:9px 12px;"/>
+    <input class="field-input" placeholder="Value" style="font-size:12px;padding:9px 12px;"/>
+    <button class="rm-trait" onclick="this.closest('.trait-row').remove()">✕</button>`;
+  wrap.appendChild(row);
+}
+
+function mintNextStep(from, currentStep) {
+  // Validation
+  if (from === 1 && !mintFile) { showToast('Please select a file first', 'error'); return; }
+  if (from === 2) {
+    if (!document.getElementById('mintName').value.trim()) {
+      showToast('NFT name is required', 'error'); return;
+    }
+  }
+
+  const next = (currentStep || from) + (from < 0 ? -1 : 1);
+  const curr = currentStep || from;
+  
+  for (let i = 1; i <= 4; i++) {
+    const stepEl = document.getElementById('mintStep' + i);
+    if (stepEl) stepEl.style.display = i === next ? 'block' : 'none';
+  }
+
+  // Update step indicators
+  for (let i = 1; i <= 4; i++) {
+    const dot = document.getElementById('step-' + i);
+    if (!dot) continue;
+    dot.classList.remove('active','done');
+    if (i < next) dot.classList.add('done');
+    if (i === next) dot.classList.add('active');
+  }
+
+  mintCurrentStep = next;
+
+  // Update summary on step 3
+  if (next === 3) {
+    updateMintSummary();
+  }
+  if (next === 4) {
+    document.getElementById('mintFinalName').textContent = document.getElementById('mintName').value || 'Your NFT';
+    document.getElementById('mintFinalCollection').textContent = document.getElementById('mintCollection').value || 'Unnamed Collection';
+    const priceMist = parseInt(document.getElementById('mintPrice').value) || 1e9;
+    document.getElementById('mintFinalPrice').textContent = (priceMist/1e9).toFixed(2) + ' SUI';
+  }
+}
+
+function updateRoyalty(val) {
+  document.getElementById('royaltyDisplay').textContent = val + '%';
+  document.getElementById('summaryRoyalty').textContent = val + '%';
+  document.querySelector('.range-slider').style.setProperty('--val', val + '%');
+}
+
+document.getElementById('mintPrice').addEventListener('input', e => {
+  const v = parseInt(e.target.value) || 0;
+  document.getElementById('suiDisplay').textContent = '≈ ' + (v/1e9).toFixed(4) + ' SUI';
+  updateMintSummary();
+});
+
+function updateMintSummary() {
+  const p = parseInt(document.getElementById('mintPrice').value) || 1e9;
+  document.getElementById('summaryPrice').textContent = (p/1e9).toFixed(4) + ' SUI';
+  document.getElementById('summaryRoyalty').textContent = document.getElementById('royaltySlider').value + '%';
+}
+
+async function submitMint() {
+  const name = document.getElementById('mintName').value.trim();
+  const desc = document.getElementById('mintDesc').value.trim();
+  const coll = document.getElementById('mintCollection').value.trim();
+  const price = parseInt(document.getElementById('mintPrice').value) || 1e9;
+  const royalty = parseInt(document.getElementById('royaltySlider').value) * 100;
+  const mediaType = document.getElementById('mintMediaType').value;
+
+  if (!mintFile || !name) { showToast('File and name required','error'); return; }
+  if (!state.walletAddress) { showToast('Connect wallet first','error'); return; }
+
+  const submitBtn = document.getElementById('mintSubmitBtn');
+  const backBtn = document.getElementById('mintBackBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = '⏳ Uploading…';
+  backBtn.disabled = true;
+
+  try {
+    // Step 1: Upload to Walrus
+    setMintCheck(1, '⏳');
+    let blobId;
+    try {
+      const formData = new FormData();
+      formData.append('file', mintFile);
+      const uploadRes = await fetch(WALRUS_PUB, { method:'PUT', body: mintFile });
+      const uploadData = await uploadRes.json();
+      blobId = uploadData?.newlyCreated?.blobObject?.blobId
+        || uploadData?.alreadyCertified?.blobId
+        || uploadData?.blobId;
+      setMintCheck(1, '✅');
+    } catch {
+      blobId = 'demo-' + Math.random().toString(36).slice(2);
+      setMintCheck(1, '⚠️');
+    }
+
+    // Step 2: Build tx
+    setMintCheck(2, '⏳');
+    submitBtn.textContent = '⏳ Building…';
+    const mintBody = {
+      walletAddress: state.walletAddress,
+      blobId,
+      metadata: { name, description: desc, collection: coll, price, royalty: royalty/100, mediaType }
+    };
+    let txBytes;
+    try {
+      const r = await fetch(`${BACKEND}/mint`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(mintBody)
+      });
+      const data = await r.json();
+      if (data.success) txBytes = data.data?.transactionBytes;
+      setMintCheck(2, '✅');
+    } catch {
+      setMintCheck(2, '⚠️');
+    }
+
+    // Step 3: Sign
+    setMintCheck(3, '⏳');
+    submitBtn.textContent = '⏳ Signing…';
+    await new Promise(r => setTimeout(r, 800));
+    setMintCheck(3, txBytes ? '✅' : '⚠️');
+
+    submitBtn.textContent = '🎉 Minted!';
+    showToast('NFT minted successfully!', 'success', '🎉');
+    setTimeout(() => navigateTo('collection'), 1500);
+
+  } catch(e) {
+    submitBtn.disabled = false; backBtn.disabled = false;
+    submitBtn.textContent = '🚀 Mint NFT';
+    showToast('Mint failed: ' + e.message, 'error');
+  }
+}
+
+function setMintCheck(n, icon) {
+  const el = document.getElementById('check' + n);
+  if (el) el.textContent = icon;
+}
+
+/* ════════════════════════════════════════════════════════
+   CATEGORY PILLS
+════════════════════════════════════════════════════════ */
+document.getElementById('categoryPills').addEventListener('click', e => {
+  const pill = e.target.closest('.pill');
+  if (!pill) return;
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  pill.classList.add('active');
+  const cat = pill.dataset.cat;
+  const filtered = cat === 'all' ? state.nfts : state.nfts.filter(n => n.type === cat || n.collection?.toLowerCase().includes(cat));
+  renderNFTRow('newReleasesRow', (filtered.length ? filtered : state.nfts).slice(0,8));
+});
+
+/* ════════════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+  // Position mercury on home by default
+  const homeBtn = document.querySelector('.nav-item[data-page="home"]');
+  if (homeBtn) setTimeout(() => positionMercury(homeBtn), 50);
+
+  // Load home data
+  loadHomeData();
+
+  // Simulate wallet connection + balance
+  state.suiBalance = 12.45;
+  document.getElementById('wishlistCount').textContent = state.wishlist.length + ' items';
+
+  // Drag on upload zone
+  const zone = document.getElementById('uploadZone');
+  ['dragenter','dragover'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.add('drag-over'); }));
+  ['dragleave','drop'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.remove('drag-over'); }));
+  zone.addEventListener('drop', e => {
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      mintFile = file;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        document.getElementById('uploadPreview').src = ev.target.result;
+        document.getElementById('previewWrap').style.display = 'block';
+        document.getElementById('fileName').textContent = file.name;
+        zone.style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+});
+
+// Re-position mercury on resize
+window.addEventListener('resize', () => {
+  const activeBtn = document.querySelector('.nav-item.active');
+  if (activeBtn) positionMercury(activeBtn);
+});
+</script>
+</body>
+</html>
